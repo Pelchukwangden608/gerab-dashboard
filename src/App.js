@@ -122,14 +122,6 @@ const fmtFull = (n) => {
   return `Nu. ${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-const fmtShort = (n) => {
-  if (!n || n === 0) return "0";
-  if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
-  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
-  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
-  return `${n.toFixed(0)}`;
-};
-
 // ─── ANIMATED COUNTER ────────────────────────────────────────────────────────
 function AnimatedNumber({ value, prefix = "", suffix = "", decimals = 0 }) {
   const [display, setDisplay] = useState(0);
