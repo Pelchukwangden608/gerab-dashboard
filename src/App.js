@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Legend, Treemap } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Legend, Treemap, LineChart, Line, CartesianGrid } from "recharts";
 import logoSrc from "./logo.png";
 
-// ─── DATA ───────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA & CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
 
 const landData = [
   { id: 1, thromde: "Paro", village: "Pathrom", dratshang: "Paro Rabdey", sqft: 2820, rate: 299.98, value: 845943.60 },
@@ -102,12 +104,15 @@ const thromdeStats = [
   { thromde: "Wangdue Phodrang", plots: 1, totalValue: 1257805 },
 ];
 
-const COLORS = ["#d4a853", "#c8693a", "#7a4f8a", "#2d7d9a", "#4a9e6b", "#e05c5c", "#5c8ee0", "#e0c55c", "#8e5ce0", "#5ce0b5", "#e08e5c", "#5ce0d8"];
-
+const COLORS = ["#d4a853", "#c8693a", "#7a4f8a", "#2d7d9a", "#4a9e6b", "#e05c5c", "#5c8ee0", "#e0c55c", "#8e5ce0", "#5ce0b5", "#e08e5c", "#5ce0d8", "#ff6b9d", "#c44569"];
 const GRAND_TOTAL = 3231208556.15;
 const TOTAL_LAND = 2523572163.67;
 const TOTAL_BUILDING = 301105061.62;
 const TOTAL_SHARES = 411057720.00;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FORMATTING FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
 
 const fmt = (n) => {
   if (!n || n === 0) return "Nu. 0";
@@ -122,12 +127,15 @@ const fmtFull = (n) => {
   return `Nu. ${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-// ─── ANIMATED COUNTER ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// ANIMATED COUNTER WITH ENHANCED EFFECTS
+// ═══════════════════════════════════════════════════════════════════════════
+
 function AnimatedNumber({ value, prefix = "", suffix = "", decimals = 0 }) {
   const [display, setDisplay] = useState(0);
   useEffect(() => {
     let start = null;
-    const duration = 1400;
+    const duration = 2000;
     const step = (ts) => {
       if (!start) start = ts;
       const progress = Math.min((ts - start) / duration, 1);
@@ -138,7 +146,7 @@ function AnimatedNumber({ value, prefix = "", suffix = "", decimals = 0 }) {
     requestAnimationFrame(step);
   }, [value]);
   return (
-    <span>
+    <span style={{ display: "inline-block", animation: "countPulse 0.6s ease-out" }}>
       {prefix}
       {decimals > 0 ? display.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) : Math.floor(display).toLocaleString("en-IN")}
       {suffix}
@@ -146,7 +154,10 @@ function AnimatedNumber({ value, prefix = "", suffix = "", decimals = 0 }) {
   );
 }
 
-// ─── PARTICLE CANVAS ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// ENHANCED PARTICLE BACKGROUND
+// ═══════════════════════════════════════════════════════════════════════════
+
 function ParticleBg() {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -156,39 +167,82 @@ function ParticleBg() {
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     resize();
     window.addEventListener("resize", resize);
-    const particles = Array.from({ length: 70 }, () => ({
-      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-      r: Math.random() * 1.8 + 0.4,
-      dx: (Math.random() - 0.5) * 0.25, dy: (Math.random() - 0.5) * 0.25,
-      alpha: Math.random() * 0.45 + 0.08,
+
+    const particles = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 2.5 + 0.5,
+      dx: (Math.random() - 0.5) * 0.3,
+      dy: (Math.random() - 0.5) * 0.3,
+      alpha: Math.random() * 0.5 + 0.1,
+      hue: Math.random() * 60 + 30,
+      pulse: Math.random() * Math.PI * 2,
     }));
-    let id;
+
+    let id, time = 0;
     const draw = () => {
+      time += 0.01;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(212,168,83,${p.alpha})`; ctx.fill();
-        p.x += p.dx; p.y += p.dy;
+      
+      particles.forEach((p, i) => {
+        p.pulse += 0.02;
+        const pulseAlpha = p.alpha + Math.sin(p.pulse) * 0.2;
+        
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${p.hue}, 70%, 60%, ${pulseAlpha})`;
+        ctx.fill();
+
+        // Draw connecting lines
+        particles.forEach((p2, j) => {
+          if (i < j) {
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 150) {
+              ctx.strokeStyle = `rgba(212,168,83,${0.1 * (1 - dist / 150)})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.stroke();
+            }
+          }
+        });
+
+        p.x += p.dx;
+        p.y += p.dy;
         if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
         if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
       });
+
       id = requestAnimationFrame(draw);
     };
     draw();
     return () => { cancelAnimationFrame(id); window.removeEventListener("resize", resize); };
   }, []);
-  return <canvas ref={canvasRef} style={{ position: "fixed", top: 0, left: 0, pointerEvents: "none", zIndex: 0, opacity: 0.35 }} />;
+  return <canvas ref={canvasRef} style={{ position: "fixed", top: 0, left: 0, pointerEvents: "none", zIndex: 0, opacity: 0.4 }} />;
 }
 
-// ─── CUSTOM TOOLTIP ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// CUSTOM ENHANCED TOOLTIP
+// ═══════════════════════════════════════════════════════════════════════════
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: "rgba(10,8,4,0.97)", border: "1px solid #d4a853", borderRadius: 8, padding: "10px 16px", boxShadow: "0 4px 20px rgba(0,0,0,0.6)" }}>
-        <p style={{ color: "#d4a853", fontWeight: 700, marginBottom: 4, fontSize: 11, margin: "0 0 6px" }}>{label}</p>
+      <div style={{ 
+        background: "linear-gradient(135deg, rgba(10,8,4,0.98), rgba(30,20,10,0.95))", 
+        border: "1px solid #d4a853", 
+        borderRadius: 12, 
+        padding: "12px 18px", 
+        boxShadow: "0 12px 40px rgba(0,0,0,0.8), 0 0 30px rgba(212,168,83,0.3)",
+        backdropFilter: "blur(10px)"
+      }}>
+        <p style={{ color: "#d4a853", fontWeight: 700, marginBottom: 6, fontSize: 12, margin: "0 0 8px", letterSpacing: 1 }}>{label}</p>
         {payload.map((p, i) => (
-          <p key={i} style={{ color: "#e8d5a3", fontSize: 11, margin: "2px 0" }}>
-            <span style={{ color: p.color }}>{p.name}: </span>
+          <p key={i} style={{ color: "#e8d5a3", fontSize: 11, margin: "3px 0" }}>
+            <span style={{ color: p.color, fontWeight: 600 }}>● {p.name}: </span>
             {fmtFull(+p.value * (p.name !== "Holdings %" ? 1000000 : 1))}
           </p>
         ))}
@@ -198,12 +252,25 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// ─── MAIN ─────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN DASHBOARD COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
+
 export default function Dashboard() {
   const [selectedDratshang, setSelectedDratshang] = useState("All");
   const [selectedThromde, setSelectedThromde] = useState("All");
   const [activeTab, setActiveTab] = useState("overview");
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [hoveredRow, setHoveredRow] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   const allDratshangs = useMemo(() => ["All", ...Array.from(new Set(dratshangSummary.map(d => d.name))).sort()], []);
   const allThromdes = useMemo(() => ["All", ...Array.from(new Set(landData.map(d => d.thromde))).sort()], []);
@@ -240,13 +307,13 @@ export default function Dashboard() {
   }, [selectedProfile, filteredLand]);
 
   const pieData = useMemo(() =>
-    [...dratshangSummary].sort((a, b) => b.total - a.total).slice(0, 9).map(d => ({
-      name: d.name.length > 22 ? d.name.slice(0, 20) + "…" : d.name,
+    [...dratshangSummary].sort((a, b) => b.total - a.total).slice(0, 10).map(d => ({
+      name: d.name.length > 20 ? d.name.slice(0, 18) + "…" : d.name,
       value: Math.round(d.total),
     })), []);
 
   const barData = useMemo(() =>
-    filteredSummary.slice(0, 8).map(d => ({
+    filteredSummary.slice(0, 10).map(d => ({
       name: d.name.length > 14 ? d.name.slice(0, 12) + "…" : d.name,
       Land: +(d.landValue / 1e6).toFixed(2),
       Building: +(d.buildingValue / 1e6).toFixed(2),
@@ -262,91 +329,301 @@ export default function Dashboard() {
   ] : [];
 
   const treemapChildren = useMemo(() =>
-    dratshangSummary.sort((a, b) => b.total - a.total).slice(0, 14).map((d, i) => ({
-      name: d.name.length > 20 ? d.name.slice(0, 18) + "…" : d.name,
+    dratshangSummary.sort((a, b) => b.total - a.total).slice(0, 16).map((d, i) => ({
+      name: d.name.length > 18 ? d.name.slice(0, 16) + "…" : d.name,
       size: Math.max(Math.round(d.total / 1e5), 1),
       color: COLORS[i % COLORS.length],
     })), []);
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #080603 0%, #120f07 45%, #0a0804 100%)", fontFamily: "'Palatino Linotype', 'Book Antiqua', Palatino, serif", color: "#e8d5a3", position: "relative", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0a0804 0%, #1a1208 20%, #0f0d06 40%, #120f08 60%, #0d0b05 80%, #080603 100%)", fontFamily: "'Palatino Linotype', 'Book Antiqua', Palatino, serif", color: "#e8d5a3", position: "relative", overflow: "hidden" }}>
       <ParticleBg />
 
-      {/* Top ornament bar */}
-      <div style={{ height: 4, background: "linear-gradient(90deg, transparent 0%, #8a3a2a 10%, #d4a853 35%, #f0c870 50%, #d4a853 65%, #8a3a2a 90%, transparent 100%)" }} />
+      {/* Aurora Background */}
+      <div style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        background: `
+          radial-gradient(circle at ${mousePos.x}px ${mousePos.y}px, rgba(212,168,83,0.08) 0%, transparent 30%),
+          radial-gradient(circle at 20% 50%, rgba(212,168,83,0.05) 0%, transparent 50%),
+          radial-gradient(circle at 80% 50%, rgba(200,105,58,0.04) 0%, transparent 50%)
+        `,
+        pointerEvents: "none",
+        zIndex: 0,
+        transition: "background 0.3s ease"
+      }} />
 
-      {/* ── HEADER ── */}
-      <div style={{ position: "relative", zIndex: 1, padding: "16px 20px 14px", borderBottom: "1px solid rgba(212,168,83,0.18)", background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+      {/* Top Ornament */}
+      <div style={{ height: 5, background: "linear-gradient(90deg, transparent 0%, #d4a853 20%, #f0c870 50%, #d4a853 80%, transparent 100%)", boxShadow: "0 0 20px rgba(212,168,83,0.4)" }} />
+
+      {/* HEADER */}
+      <div style={{ position: "relative", zIndex: 1, padding: "24px 36px 20px", borderBottom: "1px solid rgba(212,168,83,0.15)", background: "linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.2))", backdropFilter: "blur(16px)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 20 }}>
 
           {/* Logo + Title */}
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <div style={{ width: 68, height: 68, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(212,168,83,0.5)", boxShadow: "0 0 24px rgba(212,168,83,0.35), 0 0 60px rgba(200,105,58,0.15)", flexShrink: 0, background: "#000" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: "50%", overflow: "hidden",
+              border: "2.5px solid rgba(212,168,83,0.6)",
+              boxShadow: "0 0 30px rgba(212,168,83,0.4), 0 0 60px rgba(200,105,58,0.2), inset 0 1px 0 rgba(255,255,255,0.3)",
+              flexShrink: 0, background: "#000",
+              transition: "all 0.4s",
+              cursor: "pointer"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.1) rotate(5deg)";
+              e.currentTarget.style.boxShadow = "0 0 40px rgba(212,168,83,0.6), 0 0 80px rgba(200,105,58,0.3), inset 0 1px 0 rgba(255,255,255,0.3)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1) rotate(0deg)";
+              e.currentTarget.style.boxShadow = "0 0 30px rgba(212,168,83,0.4), 0 0 60px rgba(200,105,58,0.2), inset 0 1px 0 rgba(255,255,255,0.3)";
+            }}>
               <img src={logoSrc} alt="Gerab Nyed Yon Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: 2.5, color: "#d4a853", textShadow: "0 0 30px rgba(212,168,83,0.5)", lineHeight: 1.15 }}>
+              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, letterSpacing: 2.8, color: "#d4a853", textShadow: "0 0 20px rgba(212,168,83,0.5), 0 2px 8px rgba(0,0,0,0.6)", lineHeight: 1.1, animation: "titleGlow 3s ease-in-out infinite" }}>
                 GERAB NYED YON LIMITED
               </h1>
-              <p style={{ margin: "4px 0 0", fontSize: 10.5, color: "#8a6830", letterSpacing: 3, textTransform: "uppercase" }}>
-                Religious Institution Portfolio · Asset Valuation Dashboard
+              <p style={{ margin: "6px 0 0", fontSize: 11, color: "#8a6830", letterSpacing: 3, textTransform: "uppercase", fontWeight: 500 }}>
+                ✦ Religious Institution Portfolio ✦ Asset Valuation Dashboard ✦
               </p>
             </div>
           </div>
 
           {/* Tabs */}
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {[
-              { key: "overview", label: "Overview" },
-              { key: "breakdown", label: "Breakdown" },
-              { key: "plots", label: "Land Plots" },
-              { key: "detail", label: "Insights" },
+              { key: "overview", label: "◆ Overview", icon: "📊" },
+              { key: "breakdown", label: "◆ Breakdown", icon: "📈" },
+              { key: "plots", label: "◆ Land Plots", icon: "🗺️" },
+              { key: "detail", label: "◆ Insights", icon: "🔍" },
             ].map(t => (
-              <button key={t.key} onClick={() => setActiveTab(t.key)} style={{ padding: "7px 16px", borderRadius: 20, border: `1px solid ${activeTab === t.key ? "#d4a853" : "rgba(212,168,83,0.25)"}`, background: activeTab === t.key ? "rgba(212,168,83,0.18)" : "transparent", color: activeTab === t.key ? "#d4a853" : "#6a5028", fontSize: 11, cursor: "pointer", textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "inherit", transition: "all 0.25s" }}>
-                {t.label}
+              <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
+                padding: "10px 20px",
+                borderRadius: 24,
+                border: `2px solid ${activeTab === t.key ? "#d4a853" : "rgba(212,168,83,0.25)"}`,
+                background: activeTab === t.key
+                  ? "linear-gradient(135deg, rgba(212,168,83,0.35), rgba(200,105,58,0.25))"
+                  : "rgba(0,0,0,0.3)",
+                color: activeTab === t.key ? "#d4a853" : "#6a5028",
+                fontSize: 11,
+                cursor: "pointer",
+                textTransform: "uppercase",
+                letterSpacing: 1.6,
+                fontFamily: "inherit",
+                transition: "all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+                boxShadow: activeTab === t.key
+                  ? "0 10px 30px rgba(212,168,83,0.3), inset 0 1px 0 rgba(255,255,255,0.2)"
+                  : "0 4px 12px rgba(0,0,0,0.3)",
+                transform: activeTab === t.key ? "translateY(-4px)" : "none",
+                fontWeight: activeTab === t.key ? 800 : 600,
+                position: "relative",
+                overflow: "hidden",
+                backdropFilter: "blur(12px)"
+              }}>
+                {activeTab === t.key && (
+                  <>
+                    <div style={{
+                      position: "absolute",
+                      top: 0, left: "-100%", right: 0, bottom: 0,
+                      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+                      animation: "shine 2.5s infinite"
+                    }} />
+                  </>
+                )}
+                <span style={{ position: "relative", zIndex: 1 }}>{t.label}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Filters */}
-        <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
-          <select value={selectedThromde} onChange={e => setSelectedThromde(e.target.value)} style={{ background: "#0c0905", border: "1px solid rgba(212,168,83,0.28)", borderRadius: 20, padding: "7px 16px", color: "#d4a853", fontSize: 11.5, fontFamily: "inherit", cursor: "pointer", outline: "none" }}>
-            {allThromdes.map(t => <option key={t} value={t}>{t === "All" ? "All Thromde" : t}</option>)}
+        <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap", alignItems: "center" }}>
+          <select value={selectedThromde} onChange={e => setSelectedThromde(e.target.value)} style={{
+            background: "linear-gradient(135deg, rgba(15,13,8,0.8), rgba(20,15,10,0.8))",
+            border: "1.5px solid rgba(212,168,83,0.35)",
+            borderRadius: 22,
+            padding: "9px 16px",
+            color: "#d4a853",
+            fontSize: 11.5,
+            fontFamily: "inherit",
+            cursor: "pointer",
+            outline: "none",
+            backdropFilter: "blur(12px)",
+            transition: "all 0.3s",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(212,168,83,0.1)"
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = "#d4a853";
+            e.target.style.boxShadow = "0 8px 20px rgba(212,168,83,0.3), inset 0 1px 0 rgba(212,168,83,0.1)";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = "rgba(212,168,83,0.35)";
+            e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(212,168,83,0.1)";
+          }}>
+            {allThromdes.map(t => <option key={t} value={t}>{t === "All" ? "✦ All Thromde" : t}</option>)}
           </select>
-          <select value={selectedDratshang} onChange={e => setSelectedDratshang(e.target.value)} style={{ background: "#0c0905", border: "1px solid rgba(212,168,83,0.28)", borderRadius: 20, padding: "7px 16px", color: "#d4a853", fontSize: 11.5, fontFamily: "inherit", cursor: "pointer", outline: "none", maxWidth: 280 }}>
-            {allDratshangs.map(d => <option key={d} value={d}>{d === "All" ? "All Institutions" : d}</option>)}
+          <select value={selectedDratshang} onChange={e => setSelectedDratshang(e.target.value)} style={{
+            background: "linear-gradient(135deg, rgba(15,13,8,0.8), rgba(20,15,10,0.8))",
+            border: "1.5px solid rgba(212,168,83,0.35)",
+            borderRadius: 22,
+            padding: "9px 16px",
+            color: "#d4a853",
+            fontSize: 11.5,
+            fontFamily: "inherit",
+            cursor: "pointer",
+            outline: "none",
+            backdropFilter: "blur(12px)",
+            transition: "all 0.3s",
+            maxWidth: 300,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(212,168,83,0.1)"
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = "#d4a853";
+            e.target.style.boxShadow = "0 8px 20px rgba(212,168,83,0.3), inset 0 1px 0 rgba(212,168,83,0.1)";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = "rgba(212,168,83,0.35)";
+            e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(212,168,83,0.1)";
+          }}>
+            {allDratshangs.map(d => <option key={d} value={d}>{d === "All" ? "✦ All Institutions" : d}</option>)}
           </select>
           {(selectedDratshang !== "All" || selectedThromde !== "All") && (
             <button onClick={() => { setSelectedDratshang("All"); setSelectedThromde("All"); }}
-              style={{ background: "rgba(200,105,58,0.18)", border: "1px solid rgba(200,105,58,0.5)", borderRadius: 20, padding: "7px 14px", color: "#c8693a", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
-              ✕ Reset
+              style={{
+                background: "linear-gradient(135deg, rgba(200,105,58,0.25), rgba(200,105,58,0.15))",
+                border: "1.5px solid rgba(200,105,58,0.5)",
+                borderRadius: 22,
+                padding: "9px 16px",
+                color: "#c8693a",
+                fontSize: 11,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.3s",
+                fontWeight: 600,
+                boxShadow: "0 4px 12px rgba(200,105,58,0.2)",
+                backdropFilter: "blur(12px)"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.boxShadow = "0 8px 20px rgba(200,105,58,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(200,105,58,0.2)";
+              }}>
+              ✕ RESET
             </button>
           )}
         </div>
       </div>
 
-      {/* ── KPI CARDS ── */}
-      <div style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, padding: "20px 36px 0" }}>
+      {/* KPI CARDS */}
+      <div style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16, padding: "24px 36px 0" }}>
         {[
-          { label: "Grand Total Value", rawValue: kpis.totalValue, icon: "◈", color: "#d4a853", glow: "#d4a85355" },
-          { label: "Total Land Value", rawValue: kpis.landValue, icon: "⬡", color: "#7ac47a", glow: "#7ac47a44" },
-          { label: "Total Building Value", rawValue: kpis.buildingValue, icon: "⬢", color: "#5cb8e0", glow: "#5cb8e044" },
-          { label: "Total Share Value", rawValue: kpis.shareValue, icon: "◉", color: "#c87acc", glow: "#c87acc44" },
-          { label: "Land Plots", rawValue: kpis.plots, icon: "◫", color: "#e0a05c", glow: "#e0a05c44", isCount: true },
+          { label: "Grand Total Value", rawValue: kpis.totalValue, icon: "💎", color: "#d4a853", glow: "rgba(212,168,83,0.4)" },
+          { label: "Total Land Value", rawValue: kpis.landValue, icon: "🗺️", color: "#7ac47a", glow: "rgba(122,196,122,0.3)" },
+          { label: "Total Building Value", rawValue: kpis.buildingValue, icon: "🏛️", color: "#5cb8e0", glow: "rgba(92,184,224,0.3)" },
+          { label: "Total Share Value", rawValue: kpis.shareValue, icon: "📊", color: "#c87acc", glow: "rgba(200,122,204,0.3)" },
+          { label: "Land Plots", rawValue: kpis.plots, icon: "📍", color: "#e0a05c", glow: "rgba(224,160,92,0.3)", isCount: true },
         ].map((kpi, i) => (
           <div key={i} onMouseEnter={() => setHoveredCard(i)} onMouseLeave={() => setHoveredCard(null)}
-            style={{ background: hoveredCard === i ? "rgba(212,168,83,0.09)" : "rgba(255,255,255,0.025)", border: `1px solid ${hoveredCard === i ? kpi.color : "rgba(212,168,83,0.12)"}`, borderRadius: 14, padding: "18px 18px 14px", transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", transform: hoveredCard === i ? "translateY(-4px) scale(1.02)" : "none", boxShadow: hoveredCard === i ? `0 10px 35px rgba(0,0,0,0.5), 0 0 25px ${kpi.glow}` : "none", cursor: "default" }}>
-            <div style={{ fontSize: 24, color: kpi.color, marginBottom: 8, filter: `drop-shadow(0 0 8px ${kpi.color})` }}>{kpi.icon}</div>
-            <div style={{ fontSize: 10, color: "#6a5028", marginBottom: 5, letterSpacing: 1.2, textTransform: "uppercase", fontFamily: "sans-serif" }}>{kpi.label}</div>
-            <div style={{ fontSize: kpi.isCount ? 28 : 17, fontWeight: 700, color: kpi.color, lineHeight: 1.1 }}>
+            style={{
+              background: hoveredCard === i
+                ? `linear-gradient(135deg, ${kpi.glow}, rgba(212,168,83,0.15))`
+                : "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(212,168,83,0.01))",
+              border: `1.5px solid ${hoveredCard === i ? kpi.color : "rgba(212,168,83,0.15)"}`,
+              borderRadius: 18,
+              padding: "22px 20px 18px",
+              transition: "all 0.5s cubic-bezier(0.34,1.56,0.64,1)",
+              transform: hoveredCard === i ? "translateY(-12px) scale(1.06) perspective(1200px) rotateX(8deg)" : "none",
+              boxShadow: hoveredCard === i
+                ? `0 25px 50px rgba(0,0,0,0.6), 0 0 50px ${kpi.glow}, inset 0 1px 0 rgba(255,255,255,0.2)`
+                : "0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.08)",
+              backdropFilter: "blur(12px)",
+              cursor: "default",
+              position: "relative",
+              overflow: "hidden"
+            }}>
+
+            {/* Shine Effect */}
+            {hoveredCard === i && (
+              <div style={{
+                position: "absolute",
+                top: "-50%",
+                left: "-50%",
+                width: "200%",
+                height: "200%",
+                background: "linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.15) 50%, transparent 75%)",
+                animation: "shine 3s infinite"
+              }} />
+            )}
+
+            {/* Background Glow */}
+            <div style={{
+              position: "absolute",
+              top: 0, left: 0, right: 0, bottom: 0,
+              background: `radial-gradient(circle at 30% 30%, ${kpi.glow} 0%, transparent 70%)`,
+              opacity: hoveredCard === i ? 0.6 : 0.2,
+              pointerEvents: "none",
+              transition: "opacity 0.3s"
+            }} />
+
+            <div style={{
+              fontSize: 32,
+              color: kpi.color,
+              marginBottom: 12,
+              filter: `drop-shadow(0 0 16px ${kpi.color})`,
+              textShadow: `0 0 24px ${kpi.glow}`,
+              transition: "all 0.3s",
+              transform: hoveredCard === i ? "scale(1.2)" : "scale(1)",
+              position: "relative",
+              zIndex: 1
+            }}>
+              {kpi.icon}
+            </div>
+
+            <div style={{
+              fontSize: 9,
+              color: "#6a5028",
+              marginBottom: 7,
+              letterSpacing: 1.8,
+              textTransform: "uppercase",
+              fontFamily: "sans-serif",
+              fontWeight: 700,
+              position: "relative",
+              zIndex: 1
+            }}>
+              {kpi.label}
+            </div>
+
+            <div style={{
+              fontSize: kpi.isCount ? 30 : 18,
+              fontWeight: 900,
+              color: kpi.color,
+              lineHeight: 1.1,
+              textShadow: `0 0 16px ${kpi.color}, 0 2px 8px rgba(0,0,0,0.4)`,
+              position: "relative",
+              zIndex: 1
+            }}>
               {kpi.isCount
                 ? <AnimatedNumber value={kpi.rawValue} />
-                : <AnimatedNumber value={kpi.rawValue / 1e6} prefix="Nu. " suffix="M" decimals={3} />
+                : <AnimatedNumber value={kpi.rawValue / 1e6} prefix="Nu. " suffix="M" decimals={2} />
               }
             </div>
+
             {!kpi.isCount && (
-              <div style={{ fontSize: 10, color: "#5a4018", marginTop: 3 }}>
+              <div style={{
+                fontSize: 9,
+                color: "#5a4018",
+                marginTop: 5,
+                fontWeight: 500,
+                position: "relative",
+                zIndex: 1
+              }}>
                 = {fmtFull(kpi.rawValue)}
               </div>
             )}
@@ -354,70 +631,126 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* ── CONTENT ── */}
-      <div style={{ position: "relative", zIndex: 1, padding: "16px 20px 30px" }}>
+      {/* CONTENT */}
+      <div style={{ position: "relative", zIndex: 1, padding: "24px 36px 50px" }}>
 
-        {/* ═══ OVERVIEW ═══ */}
+        {/* OVERVIEW TAB */}
         {activeTab === "overview" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
 
-              {/* Donut */}
-              <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, padding: 24 }}>
-                <h3 style={{ margin: "0 0 3px", fontSize: 12, color: "#d4a853", letterSpacing: 2, textTransform: "uppercase" }}>Portfolio Distribution</h3>
-                <p style={{ margin: "0 0 14px", fontSize: 10.5, color: "#4a3818" }}>Top institutions by total portfolio value</p>
-                <ResponsiveContainer width="100%" height={280}>
+              {/* Pie Chart */}
+              <div style={{
+                background: "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(212,168,83,0.03))",
+                border: "1px solid rgba(212,168,83,0.2)",
+                borderRadius: 18,
+                padding: 28,
+                backdropFilter: "blur(14px)",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)",
+                transition: "all 0.4s",
+                cursor: "default",
+                position: "relative",
+                overflow: "hidden"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-8px) scale(1.02)";
+                e.currentTarget.style.boxShadow = "0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212,168,83,0.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "none";
+                e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)";
+              }}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(circle at 30% 30%, rgba(212,168,83,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+                <h3 style={{ margin: "0 0 4px", fontSize: 13, color: "#d4a853", letterSpacing: 2.2, textTransform: "uppercase", textShadow: "0 0 12px rgba(212,168,83,0.4)", fontWeight: 800, position: "relative", zIndex: 1 }}>Portfolio Distribution</h3>
+                <p style={{ margin: "0 0 16px", fontSize: 10.5, color: "#4a3818", position: "relative", zIndex: 1 }}>Top institutions by portfolio value</p>
+                <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
-                    <Pie data={pieData} cx="45%" cy="50%" innerRadius={65} outerRadius={108} paddingAngle={2} dataKey="value">
-                      {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="rgba(0,0,0,0.6)" strokeWidth={1.5} />)}
+                    <Pie data={pieData} cx="45%" cy="50%" innerRadius={70} outerRadius={115} paddingAngle={2} dataKey="value">
+                      {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="rgba(0,0,0,0.8)" strokeWidth={2.5} style={{ filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.5))` }} />)}
                     </Pie>
-                    <Tooltip formatter={(v) => [fmtFull(v), "Total Value"]} contentStyle={{ background: "#0c0905", border: "1px solid #d4a853", borderRadius: 8, color: "#e8d5a3", fontSize: 11 }} />
-                    <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 9.5, color: "#8a6830", paddingLeft: 10 }} />
+                    <Tooltip formatter={(v) => [fmtFull(v), "Value"]} contentStyle={{ background: "rgba(10,8,4,0.98)", border: "1px solid #d4a853", borderRadius: 12, color: "#e8d5a3", fontSize: 11, boxShadow: "0 12px 40px rgba(0,0,0,0.6)" }} />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 9.5, color: "#8a6830", paddingLeft: 10 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
 
-              {/* Stacked Bar */}
-              <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, padding: 24 }}>
-                <h3 style={{ margin: "0 0 3px", fontSize: 12, color: "#d4a853", letterSpacing: 2, textTransform: "uppercase" }}>Asset Composition</h3>
-                <p style={{ margin: "0 0 14px", fontSize: 10.5, color: "#4a3818" }}>Land · Building · Shares (Nu. Millions)</p>
-                <ResponsiveContainer width="100%" height={280}>
+              {/* Bar Chart */}
+              <div style={{
+                background: "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(212,168,83,0.03))",
+                border: "1px solid rgba(212,168,83,0.2)",
+                borderRadius: 18,
+                padding: 28,
+                backdropFilter: "blur(14px)",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)",
+                transition: "all 0.4s",
+                cursor: "default",
+                position: "relative",
+                overflow: "hidden"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-8px) scale(1.02)";
+                e.currentTarget.style.boxShadow = "0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212,168,83,0.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "none";
+                e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)";
+              }}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(circle at 70% 30%, rgba(212,168,83,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+                <h3 style={{ margin: "0 0 4px", fontSize: 13, color: "#d4a853", letterSpacing: 2.2, textTransform: "uppercase", textShadow: "0 0 12px rgba(212,168,83,0.4)", fontWeight: 800, position: "relative", zIndex: 1 }}>Asset Composition</h3>
+                <p style={{ margin: "0 0 16px", fontSize: 10.5, color: "#4a3818", position: "relative", zIndex: 1 }}>Land · Building · Shares (Nu. Millions)</p>
+                <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={barData} margin={{ left: -14, right: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,168,83,0.1)" />
                     <XAxis dataKey="name" tick={{ fontSize: 8.5, fill: "#6a5028" }} />
                     <YAxis tick={{ fontSize: 8.5, fill: "#6a5028" }} tickFormatter={v => `${v}M`} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="Land" stackId="a" fill="#7ac47a" />
-                    <Bar dataKey="Building" stackId="a" fill="#5cb8e0" />
-                    <Bar dataKey="Shares" stackId="a" fill="#c87acc" radius={[3, 3, 0, 0]} />
-                    <Legend iconSize={7} wrapperStyle={{ fontSize: 9.5, color: "#8a6830" }} />
+                    <Bar dataKey="Land" stackId="a" fill="#7ac47a" radius={[4, 4, 0, 0]} style={{ filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.3))" }} />
+                    <Bar dataKey="Building" stackId="a" fill="#5cb8e0" radius={[4, 4, 0, 0]} style={{ filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.3))" }} />
+                    <Bar dataKey="Shares" stackId="a" fill="#c87acc" radius={[4, 4, 0, 0]} style={{ filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.3))" }} />
+                    <Legend iconSize={8} wrapperStyle={{ fontSize: 9.5, color: "#8a6830", paddingTop: 10 }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Treemap */}
-            <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, padding: 24 }}>
-              <h3 style={{ margin: "0 0 3px", fontSize: 12, color: "#d4a853", letterSpacing: 2, textTransform: "uppercase" }}>Portfolio Heatmap</h3>
-              <p style={{ margin: "0 0 14px", fontSize: 10.5, color: "#4a3818" }}>Relative size of each institution's total portfolio</p>
-              <ResponsiveContainer width="100%" height={380}>
+            {/* Treemap - Full Width */}
+            <div style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(212,168,83,0.03))",
+              border: "1px solid rgba(212,168,83,0.2)",
+              borderRadius: 18,
+              padding: 28,
+              backdropFilter: "blur(14px)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)",
+              transition: "all 0.4s",
+              cursor: "default",
+              position: "relative",
+              overflow: "hidden"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-8px)";
+              e.currentTarget.style.boxShadow = "0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212,168,83,0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "none";
+              e.currentTarget.style.boxShadow = "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)";
+            }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(circle at 50% 50%, rgba(212,168,83,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+              <h3 style={{ margin: "0 0 4px", fontSize: 13, color: "#d4a853", letterSpacing: 2.2, textTransform: "uppercase", textShadow: "0 0 12px rgba(212,168,83,0.4)", fontWeight: 800, position: "relative", zIndex: 1 }}>Portfolio Heatmap</h3>
+              <p style={{ margin: "0 0 18px", fontSize: 10.5, color: "#4a3818", position: "relative", zIndex: 1 }}>Relative size of each institution's total portfolio</p>
+              <ResponsiveContainer width="100%" height={420}>
                 <Treemap data={treemapChildren} dataKey="size" stroke="#1a1a1a" strokeWidth={3}
                   content={({ x, y, width, height, name, color }) => (
                     <g>
                       <defs>
-                        <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
-                          <feGaussianBlur in="SourceGraphic" stdDeviation={2} />
-                        </filter>
-                        <filter id="shadow">
-                          <feDropShadow dx={1} dy={1} stdDeviation={2} floodOpacity={0.6} />
+                        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                          <feGaussianBlur in="SourceGraphic" stdDeviation={1.5} />
                         </filter>
                       </defs>
-                      <rect x={x} y={y} width={width} height={height} fill={color} fillOpacity={0.9} stroke="#1a1a1a" strokeWidth={3} rx={8} />
-                      {width > 35 && height > 18 && (
+                      <rect x={x} y={y} width={width} height={height} fill={color} fillOpacity={0.9} stroke="#1a1a1a" strokeWidth={3} rx={8} style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))" }} />
+                      {width > 40 && height > 22 && (
                         <>
-                          {/* Dark shadow/outline for text */}
-                          <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="middle" fill="#000" fontSize={Math.min(width / 10, 15)} fontFamily="Arial, sans-serif" fontWeight="900" opacity={0.5} filter="url(#shadow)">{name}</text>
-                          {/* Bright white text on top */}
-                          <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="middle" fill="#ffffff" fontSize={Math.min(width / 10, 15)} fontFamily="Arial, sans-serif" fontWeight="700" textShadow="0 2px 4px rgba(0,0,0,0.8)" style={{ paintOrder: "stroke", stroke: "#000", strokeWidth: 0.5 }}>{name}</text>
+                          <text x={x + width / 2} y={y + height / 2 - 4} textAnchor="middle" dominantBaseline="middle" fill="#000" fontSize={Math.min(width / 10.5, 16)} fontFamily="Arial, sans-serif" fontWeight="900" opacity={0.6} filter="url(#glow)">{name}</text>
+                          <text x={x + width / 2} y={y + height / 2 - 4} textAnchor="middle" dominantBaseline="middle" fill="#ffffff" fontSize={Math.min(width / 10.5, 16)} fontFamily="Arial, sans-serif" fontWeight="800" style={{ paintOrder: "stroke", stroke: "#000", strokeWidth: 0.6 }}>{name}</text>
                         </>
                       )}
                     </g>
@@ -427,39 +760,70 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ═══ BREAKDOWN ═══ */}
+        {/* BREAKDOWN TAB */}
         {activeTab === "breakdown" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             {selectedProfile && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
                 {/* Profile Card */}
-                <div style={{ background: "rgba(212,168,83,0.07)", border: "1px solid rgba(212,168,83,0.28)", borderRadius: 14, padding: 24 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", border: "1.5px solid rgba(212,168,83,0.4)", marginBottom: 12 }}>
+                <div style={{
+                  background: "linear-gradient(135deg, rgba(212,168,83,0.1), rgba(212,168,83,0.05))",
+                  border: "1.5px solid rgba(212,168,83,0.3)",
+                  borderRadius: 18,
+                  padding: 28,
+                  backdropFilter: "blur(14px)",
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.2)",
+                  position: "relative",
+                  overflow: "hidden"
+                }}>
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(circle at 20% 20%, rgba(212,168,83,0.1) 0%, transparent 60%)", pointerEvents: "none" }} />
+
+                  <div style={{
+                    width: 48, height: 48, borderRadius: "50%", overflow: "hidden",
+                    border: "2px solid rgba(212,168,83,0.5)",
+                    marginBottom: 14,
+                    boxShadow: "0 0 20px rgba(212,168,83,0.3)",
+                    position: "relative",
+                    zIndex: 1
+                  }}>
                     <img src={logoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
-                  <h3 style={{ margin: "0 0 12px", fontSize: 13, color: "#d4a853", lineHeight: 1.4 }}>{selectedProfile.name}</h3>
+
+                  <h3 style={{ margin: "0 0 16px", fontSize: 14, color: "#d4a853", lineHeight: 1.4, fontWeight: 800, textShadow: "0 0 12px rgba(212,168,83,0.3)", position: "relative", zIndex: 1 }}>{selectedProfile.name}</h3>
+
                   {[
                     { l: "Grand Total", v: fmtFull(selectedProfile.total), c: "#d4a853", big: true },
                     { l: "Land Assets", v: fmtFull(selectedProfile.landValue), c: "#7ac47a" },
                     { l: "Building Value", v: fmtFull(selectedProfile.buildingValue), c: "#5cb8e0" },
                     { l: "Share Value", v: fmtFull(selectedProfile.shareValue), c: "#c87acc" },
                     { l: "Portfolio Share", v: `${selectedProfile.pct}%`, c: "#e0a05c" },
-                    { l: "Land Plots (filtered)", v: filteredLand.length, c: "#e8d5a3" },
+                    { l: "Land Plots", v: filteredLand.length, c: "#e8d5a3" },
                   ].map((row, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(212,168,83,0.09)", fontSize: row.big ? 12 : 11 }}>
-                      <span style={{ color: "#6a5028" }}>{row.l}</span>
-                      <span style={{ color: row.c, fontWeight: row.big ? 700 : 500 }}>{row.v}</span>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(212,168,83,0.12)", fontSize: row.big ? 12 : 11, position: "relative", zIndex: 1 }}>
+                      <span style={{ color: "#6a5028", fontWeight: row.big ? 700 : 500 }}>{row.l}</span>
+                      <span style={{ color: row.c, fontWeight: row.big ? 800 : 600, textShadow: `0 0 8px ${row.c}44` }}>{row.v}</span>
                     </div>
                   ))}
                 </div>
+
                 {/* Radar */}
-                <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, padding: 24 }}>
-                  <h3 style={{ margin: "0 0 14px", fontSize: 12, color: "#d4a853", letterSpacing: 2, textTransform: "uppercase" }}>Asset Radar — {selectedProfile.name}</h3>
-                  <ResponsiveContainer width="100%" height={270}>
+                <div style={{
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(212,168,83,0.03))",
+                  border: "1px solid rgba(212,168,83,0.2)",
+                  borderRadius: 18,
+                  padding: 28,
+                  backdropFilter: "blur(14px)",
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)",
+                  position: "relative",
+                  overflow: "hidden"
+                }}>
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(circle at 50% 50%, rgba(212,168,83,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+                  <h3 style={{ margin: "0 0 18px", fontSize: 13, color: "#d4a853", letterSpacing: 2.2, textTransform: "uppercase", textShadow: "0 0 12px rgba(212,168,83,0.4)", fontWeight: 800, position: "relative", zIndex: 1 }}>Asset Radar — {selectedProfile.name}</h3>
+                  <ResponsiveContainer width="100%" height={300}>
                     <RadarChart data={radarData}>
-                      <PolarGrid stroke="rgba(212,168,83,0.12)" />
+                      <PolarGrid stroke="rgba(212,168,83,0.15)" />
                       <PolarAngleAxis dataKey="subject" tick={{ fill: "#8a6830", fontSize: 11 }} />
-                      <Radar dataKey="A" stroke="#d4a853" fill="#d4a853" fillOpacity={0.18} strokeWidth={2} />
+                      <Radar dataKey="A" stroke="#d4a853" fill="#d4a853" fillOpacity={0.25} strokeWidth={2.5} style={{ filter: "drop-shadow(0 0 8px rgba(212,168,83,0.4))" }} />
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
@@ -467,50 +831,75 @@ export default function Dashboard() {
             )}
 
             {/* Full Table */}
-            <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, overflow: "hidden" }}>
-              <div style={{ padding: "14px 22px", borderBottom: "1px solid rgba(212,168,83,0.12)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0, fontSize: 12, color: "#d4a853", letterSpacing: 2, textTransform: "uppercase" }}>Full Institution Registry</h3>
-                <span style={{ fontSize: 10.5, color: "#4a3818" }}>{filteredSummary.length} records · Click row to select</span>
+            <div style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(212,168,83,0.01))",
+              border: "1px solid rgba(212,168,83,0.2)",
+              borderRadius: 18,
+              overflow: "hidden",
+              backdropFilter: "blur(14px)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)"
+            }}>
+              <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(212,168,83,0.12)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "linear-gradient(90deg, rgba(212,168,83,0.05), transparent)" }}>
+                <h3 style={{ margin: 0, fontSize: 13, color: "#d4a853", letterSpacing: 2.2, textTransform: "uppercase", fontWeight: 800 }}>Institution Registry</h3>
+                <span style={{ fontSize: 10.5, color: "#4a3818" }}>{filteredSummary.length} records</span>
               </div>
-              <div style={{ overflowX: "auto", maxHeight: 440, overflowY: "auto" }}>
+              <div style={{ overflowX: "auto", maxHeight: 500, overflowY: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
                   <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
-                    <tr style={{ background: "rgba(10,8,4,0.95)" }}>
+                    <tr style={{ background: "rgba(10,8,4,0.98)" }}>
                       {["#", "Institution", "Land Value", "Building Value", "Share Value", "Total Value", "Holdings %"].map(h => (
-                        <th key={h} style={{ padding: "11px 14px", textAlign: h === "#" ? "center" : "left", color: "#d4a853", letterSpacing: 0.8, fontWeight: 600, borderBottom: "1px solid rgba(212,168,83,0.15)", whiteSpace: "nowrap", fontSize: 10.5 }}>{h}</th>
+                        <th key={h} style={{ padding: "12px 14px", textAlign: h === "#" ? "center" : "left", color: "#d4a853", letterSpacing: 1, fontWeight: 700, borderBottom: "1px solid rgba(212,168,83,0.2)", whiteSpace: "nowrap", fontSize: 10.5 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredSummary.map((d, i) => (
                       <tr key={i} onClick={() => setSelectedDratshang(d.name === selectedDratshang ? "All" : d.name)}
-                        style={{ cursor: "pointer", background: selectedDratshang === d.name ? "rgba(212,168,83,0.1)" : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.012)", transition: "background 0.15s" }}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(212,168,83,0.07)"}
-                        onMouseLeave={e => e.currentTarget.style.background = selectedDratshang === d.name ? "rgba(212,168,83,0.1)" : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.012)"}>
-                        <td style={{ padding: "10px 14px", color: "#4a3818", borderBottom: "1px solid rgba(212,168,83,0.05)", textAlign: "center" }}>{i + 1}</td>
-                        <td style={{ padding: "10px 14px", color: "#e8d5a3", borderBottom: "1px solid rgba(212,168,83,0.05)", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: selectedDratshang === d.name ? 700 : 400 }}>{d.name}</td>
-                        <td style={{ padding: "10px 14px", color: "#7ac47a", borderBottom: "1px solid rgba(212,168,83,0.05)", whiteSpace: "nowrap" }}>{fmtFull(d.landValue)}</td>
-                        <td style={{ padding: "10px 14px", color: "#5cb8e0", borderBottom: "1px solid rgba(212,168,83,0.05)", whiteSpace: "nowrap" }}>{fmtFull(d.buildingValue)}</td>
-                        <td style={{ padding: "10px 14px", color: "#c87acc", borderBottom: "1px solid rgba(212,168,83,0.05)", whiteSpace: "nowrap" }}>{fmtFull(d.shareValue)}</td>
-                        <td style={{ padding: "10px 14px", color: "#d4a853", fontWeight: 700, borderBottom: "1px solid rgba(212,168,83,0.05)", whiteSpace: "nowrap" }}>{fmtFull(d.total)}</td>
-                        <td style={{ padding: "10px 14px", borderBottom: "1px solid rgba(212,168,83,0.05)", minWidth: 130 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                            <div style={{ flex: 1, height: 4, background: "rgba(212,168,83,0.1)", borderRadius: 2 }}>
-                              <div style={{ height: "100%", width: `${Math.min((d.pct / 30) * 100, 100)}%`, background: `linear-gradient(90deg, ${COLORS[i % COLORS.length]}, ${COLORS[(i + 1) % COLORS.length]})`, borderRadius: 2 }} />
+                        onMouseEnter={() => setHoveredRow(i)}
+                        onMouseLeave={() => setHoveredRow(null)}
+                        style={{
+                          cursor: "pointer",
+                          background: hoveredRow === i
+                            ? "rgba(212,168,83,0.12)"
+                            : selectedDratshang === d.name
+                              ? "rgba(212,168,83,0.1)"
+                              : i % 2 === 0
+                                ? "transparent"
+                                : "rgba(255,255,255,0.015)",
+                          transition: "all 0.2s",
+                          transform: hoveredRow === i ? "scale(1.01)" : "none",
+                          boxShadow: hoveredRow === i ? "inset 0 0 12px rgba(212,168,83,0.1)" : "none"
+                        }}>
+                        <td style={{ padding: "11px 14px", color: "#4a3818", borderBottom: "1px solid rgba(212,168,83,0.05)", textAlign: "center", fontWeight: 600 }}>{i + 1}</td>
+                        <td style={{ padding: "11px 14px", color: "#e8d5a3", borderBottom: "1px solid rgba(212,168,83,0.05)", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: selectedDratshang === d.name ? 700 : 500 }}>{d.name}</td>
+                        <td style={{ padding: "11px 14px", color: "#7ac47a", borderBottom: "1px solid rgba(212,168,83,0.05)", whiteSpace: "nowrap", fontWeight: 600 }}>{fmtFull(d.landValue)}</td>
+                        <td style={{ padding: "11px 14px", color: "#5cb8e0", borderBottom: "1px solid rgba(212,168,83,0.05)", whiteSpace: "nowrap", fontWeight: 600 }}>{fmtFull(d.buildingValue)}</td>
+                        <td style={{ padding: "11px 14px", color: "#c87acc", borderBottom: "1px solid rgba(212,168,83,0.05)", whiteSpace: "nowrap", fontWeight: 600 }}>{fmtFull(d.shareValue)}</td>
+                        <td style={{ padding: "11px 14px", color: "#d4a853", fontWeight: 800, borderBottom: "1px solid rgba(212,168,83,0.05)", whiteSpace: "nowrap", textShadow: "0 0 10px rgba(212,168,83,0.3)" }}>{fmtFull(d.total)}</td>
+                        <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(212,168,83,0.05)", minWidth: 140 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ flex: 1, height: 5, background: "rgba(212,168,83,0.1)", borderRadius: 3, overflow: "hidden" }}>
+                              <div style={{
+                                height: "100%",
+                                width: `${Math.min((d.pct / 30) * 100, 100)}%`,
+                                background: `linear-gradient(90deg, ${COLORS[i % COLORS.length]}, ${COLORS[(i + 1) % COLORS.length]})`,
+                                borderRadius: 3,
+                                boxShadow: `0 0 12px ${COLORS[i % COLORS.length]}`,
+                                transition: "all 0.3s"
+                              }} />
                             </div>
-                            <span style={{ color: "#e0a05c", fontSize: 10, flexShrink: 0 }}>{d.pct}%</span>
+                            <span style={{ color: "#e0a05c", fontSize: 10, flexShrink: 0, fontWeight: 700 }}>{d.pct}%</span>
                           </div>
                         </td>
                       </tr>
                     ))}
-                    {/* Grand Total Row */}
-                    <tr style={{ background: "rgba(212,168,83,0.08)" }}>
-                      <td colSpan={2} style={{ padding: "12px 14px", color: "#d4a853", fontWeight: 700, fontSize: 11, letterSpacing: 1 }}>GRAND TOTAL</td>
-                      <td style={{ padding: "12px 14px", color: "#7ac47a", fontWeight: 700, whiteSpace: "nowrap" }}>{fmtFull(TOTAL_LAND)}</td>
-                      <td style={{ padding: "12px 14px", color: "#5cb8e0", fontWeight: 700, whiteSpace: "nowrap" }}>{fmtFull(TOTAL_BUILDING)}</td>
-                      <td style={{ padding: "12px 14px", color: "#c87acc", fontWeight: 700, whiteSpace: "nowrap" }}>{fmtFull(TOTAL_SHARES)}</td>
-                      <td style={{ padding: "12px 14px", color: "#d4a853", fontWeight: 700, whiteSpace: "nowrap", fontSize: 12 }}>{fmtFull(GRAND_TOTAL)}</td>
-                      <td style={{ padding: "12px 14px", color: "#d4a853", fontWeight: 700 }}>100.00%</td>
+                    <tr style={{ background: "linear-gradient(90deg, rgba(212,168,83,0.1), transparent)" }}>
+                      <td colSpan={2} style={{ padding: "13px 14px", color: "#d4a853", fontWeight: 800, fontSize: 11.5, letterSpacing: 1.2, borderBottom: "1px solid rgba(212,168,83,0.2)" }}>GRAND TOTAL</td>
+                      <td style={{ padding: "13px 14px", color: "#7ac47a", fontWeight: 800, whiteSpace: "nowrap", borderBottom: "1px solid rgba(212,168,83,0.2)", textShadow: "0 0 8px rgba(122,196,122,0.3)" }}>{fmtFull(TOTAL_LAND)}</td>
+                      <td style={{ padding: "13px 14px", color: "#5cb8e0", fontWeight: 800, whiteSpace: "nowrap", borderBottom: "1px solid rgba(212,168,83,0.2)", textShadow: "0 0 8px rgba(92,184,224,0.3)" }}>{fmtFull(TOTAL_BUILDING)}</td>
+                      <td style={{ padding: "13px 14px", color: "#c87acc", fontWeight: 800, whiteSpace: "nowrap", borderBottom: "1px solid rgba(212,168,83,0.2)", textShadow: "0 0 8px rgba(200,122,204,0.3)" }}>{fmtFull(TOTAL_SHARES)}</td>
+                      <td style={{ padding: "13px 14px", color: "#d4a853", fontWeight: 900, whiteSpace: "nowrap", fontSize: 12.5, borderBottom: "1px solid rgba(212,168,83,0.2)", textShadow: "0 0 12px rgba(212,168,83,0.4)" }}>{fmtFull(GRAND_TOTAL)}</td>
+                      <td style={{ padding: "13px 14px", color: "#d4a853", fontWeight: 900, borderBottom: "1px solid rgba(212,168,83,0.2)" }}>100.00%</td>
                     </tr>
                   </tbody>
                 </table>
@@ -519,62 +908,106 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ═══ LAND PLOTS ═══ */}
+        {/* LAND PLOTS TAB */}
         {activeTab === "plots" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Thromde Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 14 }}>
               {thromdeStats.map((t, i) => (
                 <div key={i} onClick={() => setSelectedThromde(t.thromde === selectedThromde ? "All" : t.thromde)}
-                  style={{ background: selectedThromde === t.thromde ? "rgba(212,168,83,0.14)" : "rgba(255,255,255,0.025)", border: `1px solid ${selectedThromde === t.thromde ? "#d4a853" : "rgba(212,168,83,0.14)"}`, borderRadius: 12, padding: 18, cursor: "pointer", transition: "all 0.25s" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                    <span style={{ fontSize: 13, color: "#d4a853", fontWeight: 600 }}>{t.thromde}</span>
-                    <span style={{ fontSize: 10, background: "rgba(212,168,83,0.12)", padding: "2px 8px", borderRadius: 10, color: "#d4a853" }}>{t.plots}</span>
+                  style={{
+                    background: selectedThromde === t.thromde
+                      ? `linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.1))`
+                      : "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(212,168,83,0.01))",
+                    border: `1.5px solid ${selectedThromde === t.thromde ? "#d4a853" : "rgba(212,168,83,0.2)"}`,
+                    borderRadius: 14,
+                    padding: 18,
+                    cursor: "pointer",
+                    transition: "all 0.3s",
+                    transform: selectedThromde === t.thromde ? "scale(1.05)" : "none",
+                    boxShadow: selectedThromde === t.thromde
+                      ? "0 10px 30px rgba(212,168,83,0.3), inset 0 1px 0 rgba(255,255,255,0.1)"
+                      : "0 4px 12px rgba(0,0,0,0.3)",
+                    backdropFilter: "blur(12px)",
+                    position: "relative",
+                    overflow: "hidden"
+                  }}>
+                  <div style={{
+                    position: "absolute",
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    background: `radial-gradient(circle at 50% 50%, rgba(212,168,83,0.1) 0%, transparent 70%)`,
+                    opacity: selectedThromde === t.thromde ? 0.5 : 0.2,
+                    transition: "opacity 0.3s"
+                  }} />
+
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, position: "relative", zIndex: 1 }}>
+                    <span style={{ fontSize: 13, color: "#d4a853", fontWeight: 800, textShadow: "0 0 10px rgba(212,168,83,0.3)" }}>{t.thromde}</span>
+                    <span style={{ fontSize: 10, background: "linear-gradient(135deg, rgba(212,168,83,0.2), rgba(200,105,58,0.1))", padding: "3px 10px", borderRadius: 12, color: "#d4a853", fontWeight: 700 }}>{t.plots}</span>
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#e8d5a3", marginBottom: 8 }}>{fmt(t.totalValue)}</div>
-                  <div style={{ height: 3, background: "rgba(212,168,83,0.08)", borderRadius: 2 }}>
-                    <div style={{ height: "100%", width: `${(t.plots / 232) * 100}%`, background: COLORS[i], borderRadius: 2 }} />
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#e8d5a3", marginBottom: 10, textShadow: "0 0 8px rgba(212,168,83,0.2)", position: "relative", zIndex: 1 }}>{fmt(t.totalValue)}</div>
+                  <div style={{ height: 4, background: "rgba(212,168,83,0.1)", borderRadius: 2, overflow: "hidden", position: "relative", zIndex: 1 }}>
+                    <div style={{
+                      height: "100%",
+                      width: `${(t.plots / 232) * 100}%`,
+                      background: `linear-gradient(90deg, ${COLORS[i]}, ${COLORS[(i + 1) % COLORS.length]})`,
+                      borderRadius: 2,
+                      boxShadow: `0 0 12px ${COLORS[i]}`,
+                      transition: "all 0.4s"
+                    }} />
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Plot Table */}
-            <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, overflow: "hidden" }}>
-              <div style={{ padding: "14px 22px", borderBottom: "1px solid rgba(212,168,83,0.12)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0, fontSize: 12, color: "#d4a853", letterSpacing: 2, textTransform: "uppercase" }}>Land Plot Registry</h3>
+            <div style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(212,168,83,0.01))",
+              border: "1px solid rgba(212,168,83,0.2)",
+              borderRadius: 18,
+              overflow: "hidden",
+              backdropFilter: "blur(14px)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)"
+            }}>
+              <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(212,168,83,0.12)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "linear-gradient(90deg, rgba(212,168,83,0.05), transparent)" }}>
+                <h3 style={{ margin: 0, fontSize: 13, color: "#d4a853", letterSpacing: 2.2, textTransform: "uppercase", fontWeight: 800 }}>Land Plots</h3>
                 <span style={{ fontSize: 10.5, color: "#4a3818" }}>{filteredLand.length} of 232 plots</span>
               </div>
-              <div style={{ overflowX: "auto", maxHeight: 480, overflowY: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+              <div style={{ overflowX: "auto", maxHeight: 500, overflowY: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10.5 }}>
                   <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
-                    <tr style={{ background: "rgba(10,8,4,0.95)" }}>
-                      {["SL.", "Thromde", "Village", "Institution", "Plot ID", "Area (sqft)", "PAVA Rate", "Valuation"].map(h => (
-                        <th key={h} style={{ padding: "10px 13px", textAlign: "left", color: "#d4a853", letterSpacing: 0.8, fontWeight: 600, borderBottom: "1px solid rgba(212,168,83,0.15)", whiteSpace: "nowrap", fontSize: 10.5 }}>{h}</th>
+                    <tr style={{ background: "rgba(10,8,4,0.98)" }}>
+                      {["SL.", "Thromde", "Village", "Institution", "Area (sqft)", "Rate", "Value"].map(h => (
+                        <th key={h} style={{ padding: "11px 12px", textAlign: "left", color: "#d4a853", letterSpacing: 0.8, fontWeight: 700, borderBottom: "1px solid rgba(212,168,83,0.2)", whiteSpace: "nowrap", fontSize: 10 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredLand.map((d, i) => (
-                      <tr key={d.id} style={{ background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.012)", transition: "background 0.15s" }}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(212,168,83,0.06)"}
-                        onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.012)"}>
-                        <td style={{ padding: "9px 13px", color: "#4a3818", borderBottom: "1px solid rgba(212,168,83,0.04)" }}>{d.id}</td>
-                        <td style={{ padding: "9px 13px", color: "#e0a05c", borderBottom: "1px solid rgba(212,168,83,0.04)" }}>{d.thromde}</td>
-                        <td style={{ padding: "9px 13px", color: "#8a7050", borderBottom: "1px solid rgba(212,168,83,0.04)" }}>{d.village}</td>
-                        <td style={{ padding: "9px 13px", color: "#e8d5a3", borderBottom: "1px solid rgba(212,168,83,0.04)", maxWidth: 190, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.dratshang}</td>
-                        <td style={{ padding: "9px 13px", color: "#7a9aaa", borderBottom: "1px solid rgba(212,168,83,0.04)", whiteSpace: "nowrap" }}>{d.id}</td>
-                        <td style={{ padding: "9px 13px", color: "#7ac47a", borderBottom: "1px solid rgba(212,168,83,0.04)", textAlign: "right", whiteSpace: "nowrap" }}>{d.sqft.toLocaleString()}</td>
-                        <td style={{ padding: "9px 13px", color: "#8a8070", borderBottom: "1px solid rgba(212,168,83,0.04)", textAlign: "right" }}>{d.rate.toFixed(2)}</td>
-                        <td style={{ padding: "9px 13px", color: "#d4a853", fontWeight: 600, borderBottom: "1px solid rgba(212,168,83,0.04)", whiteSpace: "nowrap", textAlign: "right" }}>{fmtFull(d.value)}</td>
+                      <tr key={d.id} style={{
+                        background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.008)",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(212,168,83,0.08)";
+                        e.currentTarget.style.transform = "scale(1.01)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.008)";
+                        e.currentTarget.style.transform = "scale(1)";
+                      }}>
+                        <td style={{ padding: "9px 12px", color: "#4a3818", borderBottom: "1px solid rgba(212,168,83,0.04)", fontWeight: 600 }}>{d.id}</td>
+                        <td style={{ padding: "9px 12px", color: "#e0a05c", borderBottom: "1px solid rgba(212,168,83,0.04)", fontWeight: 600 }}>{d.thromde}</td>
+                        <td style={{ padding: "9px 12px", color: "#8a7050", borderBottom: "1px solid rgba(212,168,83,0.04)" }}>{d.village}</td>
+                        <td style={{ padding: "9px 12px", color: "#e8d5a3", borderBottom: "1px solid rgba(212,168,83,0.04)", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.dratshang}</td>
+                        <td style={{ padding: "9px 12px", color: "#7ac47a", borderBottom: "1px solid rgba(212,168,83,0.04)", textAlign: "right", whiteSpace: "nowrap", fontWeight: 600 }}>{d.sqft.toLocaleString()}</td>
+                        <td style={{ padding: "9px 12px", color: "#8a8070", borderBottom: "1px solid rgba(212,168,83,0.04)", textAlign: "right" }}>{d.rate.toFixed(2)}</td>
+                        <td style={{ padding: "9px 12px", color: "#d4a853", fontWeight: 700, borderBottom: "1px solid rgba(212,168,83,0.04)", whiteSpace: "nowrap", textAlign: "right", textShadow: "0 0 8px rgba(212,168,83,0.3)" }}>{fmtFull(d.value)}</td>
                       </tr>
                     ))}
-                    {/* Subtotal */}
-                    <tr style={{ background: "rgba(212,168,83,0.07)" }}>
-                      <td colSpan={5} style={{ padding: "11px 13px", color: "#d4a853", fontWeight: 700, fontSize: 11 }}>SUB-TOTAL ({filteredLand.length} plots)</td>
-                      <td style={{ padding: "11px 13px", color: "#7ac47a", fontWeight: 700, textAlign: "right" }}>{filteredLand.reduce((s, d) => s + d.sqft, 0).toLocaleString()}</td>
-                      <td style={{ padding: "11px 13px" }} />
-                      <td style={{ padding: "11px 13px", color: "#d4a853", fontWeight: 700, textAlign: "right" }}>{fmtFull(filteredLand.reduce((s, d) => s + d.value, 0))}</td>
+                    <tr style={{ background: "linear-gradient(90deg, rgba(212,168,83,0.1), transparent)" }}>
+                      <td colSpan={4} style={{ padding: "11px 12px", color: "#d4a853", fontWeight: 800, fontSize: 11, borderBottom: "1px solid rgba(212,168,83,0.2)" }}>SUB-TOTAL ({filteredLand.length} plots)</td>
+                      <td style={{ padding: "11px 12px", color: "#7ac47a", fontWeight: 800, textAlign: "right", borderBottom: "1px solid rgba(212,168,83,0.2)", textShadow: "0 0 8px rgba(122,196,122,0.3)" }}>{filteredLand.reduce((s, d) => s + d.sqft, 0).toLocaleString()}</td>
+                      <td style={{ padding: "11px 12px", borderBottom: "1px solid rgba(212,168,83,0.2)" }} />
+                      <td style={{ padding: "11px 12px", color: "#d4a853", fontWeight: 800, textAlign: "right", borderBottom: "1px solid rgba(212,168,83,0.2)", textShadow: "0 0 10px rgba(212,168,83,0.4)" }}>{fmtFull(filteredLand.reduce((s, d) => s + d.value, 0))}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -583,11 +1016,23 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ═══ INSIGHTS ═══ */}
+        {/* INSIGHTS TAB */}
         {activeTab === "detail" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18 }}>
-            <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, padding: 26 }}>
-              <h3 style={{ margin: "0 0 18px", fontSize: 12, color: "#d4a853", letterSpacing: 2, textTransform: "uppercase" }}>Portfolio Summary</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
+            <div style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(212,168,83,0.03))",
+              border: "1px solid rgba(212,168,83,0.2)",
+              borderRadius: 18,
+              padding: 28,
+              backdropFilter: "blur(14px)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)",
+              position: "relative",
+              overflow: "hidden"
+            }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(circle at 30% 30%, rgba(212,168,83,0.1) 0%, transparent 60%)", pointerEvents: "none" }} />
+
+              <h3 style={{ margin: "0 0 20px", fontSize: 13, color: "#d4a853", letterSpacing: 2.2, textTransform: "uppercase", fontWeight: 800, textShadow: "0 0 12px rgba(212,168,83,0.4)", position: "relative", zIndex: 1 }}>Portfolio Summary</h3>
+
               {[
                 { label: "Grand Total Portfolio Value", value: fmtFull(GRAND_TOTAL), highlight: true },
                 { label: "Total Land Value", value: fmtFull(TOTAL_LAND) },
@@ -600,49 +1045,144 @@ export default function Dashboard() {
                 { label: "Number of Buildings", value: "47 (63 registered)" },
                 { label: "Total Share Entries", value: "18,947,628 shares" },
                 { label: "Total Land Area (sqft)", value: "4,724,725 sqft" },
-                { label: "Highest PAVA Rate", value: "Nu. 2,944.96 / sqft (Core)" },
-                { label: "Largest Plot", value: "929,919 sqft (Changzamtog)" },
               ].map((row, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(212,168,83,0.07)", fontSize: row.sub ? 10.5 : 11.5 }}>
-                  <span style={{ color: row.sub ? "#4a3818" : "#6a5028" }}>{row.label}</span>
-                  <span style={{ color: row.highlight ? "#d4a853" : row.sub ? "#5a4828" : "#e8d5a3", fontWeight: row.highlight ? 700 : 400 }}>{row.value}</span>
+                <div key={i} style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "10px 0",
+                  borderBottom: "1px solid rgba(212,168,83,0.08)",
+                  fontSize: row.sub ? 10.5 : 11.5,
+                  position: "relative",
+                  zIndex: 1
+                }}>
+                  <span style={{ color: row.sub ? "#4a3818" : "#6a5028", fontWeight: row.sub ? 500 : 600 }}>{row.label}</span>
+                  <span style={{
+                    color: row.highlight ? "#d4a853" : row.sub ? "#5a4828" : "#e8d5a3",
+                    fontWeight: row.highlight ? 900 : 600,
+                    textShadow: row.highlight ? "0 0 12px rgba(212,168,83,0.4)" : "none"
+                  }}>
+                    {row.value}
+                  </span>
                 </div>
               ))}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, padding: 24 }}>
-                <h3 style={{ margin: "0 0 16px", fontSize: 12, color: "#d4a853", letterSpacing: 2, textTransform: "uppercase" }}>Top 5 by Total Value</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div style={{
+                background: "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(212,168,83,0.03))",
+                border: "1px solid rgba(212,168,83,0.2)",
+                borderRadius: 18,
+                padding: 28,
+                backdropFilter: "blur(14px)",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.1)",
+                position: "relative",
+                overflow: "hidden"
+              }}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(circle at 70% 30%, rgba(212,168,83,0.1) 0%, transparent 60%)", pointerEvents: "none" }} />
+
+                <h3 style={{ margin: "0 0 18px", fontSize: 13, color: "#d4a853", letterSpacing: 2.2, textTransform: "uppercase", fontWeight: 800, textShadow: "0 0 12px rgba(212,168,83,0.4)", position: "relative", zIndex: 1 }}>Top 5 by Total Value</h3>
+
                 {dratshangSummary.sort((a, b) => b.total - a.total).slice(0, 5).map((d, i) => (
                   <div key={i} onClick={() => { setSelectedDratshang(d.name); setActiveTab("breakdown"); }}
-                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderBottom: "1px solid rgba(212,168,83,0.07)", cursor: "pointer" }}>
-                    <div style={{ width: 26, height: 26, borderRadius: "50%", background: COLORS[i], display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#0a0804", flexShrink: 0 }}>{i + 1}</div>
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: "13px 0",
+                      borderBottom: "1px solid rgba(212,168,83,0.08)",
+                      cursor: "pointer",
+                      transition: "all 0.3s",
+                      position: "relative",
+                      zIndex: 1
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateX(8px)";
+                      e.currentTarget.style.background = "rgba(212,168,83,0.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.background = "transparent";
+                    }}>
+                    <div style={{
+                      width: 32, height: 32,
+                      borderRadius: "50%",
+                      background: COLORS[i],
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      fontWeight: 900,
+                      color: "#0a0804",
+                      flexShrink: 0,
+                      boxShadow: `0 0 16px ${COLORS[i]}`
+                    }}>
+                      {i + 1}
+                    </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11.5, color: "#e8d5a3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 5 }}>{d.name}</div>
-                      <div style={{ height: 3, background: "rgba(212,168,83,0.08)", borderRadius: 2 }}>
-                        <div style={{ height: "100%", width: `${(d.total / GRAND_TOTAL) * 100 * 3.5}%`, maxWidth: "100%", background: COLORS[i], borderRadius: 2 }} />
+                      <div style={{ fontSize: 11.5, color: "#e8d5a3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 6, fontWeight: 600 }}>{d.name}</div>
+                      <div style={{ height: 4, background: "rgba(212,168,83,0.1)", borderRadius: 2, overflow: "hidden" }}>
+                        <div style={{
+                          height: "100%",
+                          width: `${(d.total / GRAND_TOTAL) * 100 * 4}%`,
+                          maxWidth: "100%",
+                          background: COLORS[i],
+                          borderRadius: 2,
+                          boxShadow: `0 0 12px ${COLORS[i]}`,
+                          transition: "all 0.3s"
+                        }} />
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 12, color: COLORS[i], fontWeight: 700 }}>{fmt(d.total)}</div>
-                      <div style={{ fontSize: 9.5, color: "#4a3818" }}>{d.pct}%</div>
+                      <div style={{ fontSize: 12, color: COLORS[i], fontWeight: 900, textShadow: `0 0 10px ${COLORS[i]}55` }}>{fmt(d.total)}</div>
+                      <div style={{ fontSize: 9.5, color: "#4a3818", fontWeight: 600 }}>{d.pct}%</div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ background: "rgba(212,168,83,0.06)", border: "1px solid rgba(212,168,83,0.18)", borderRadius: 14, padding: 22 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", overflow: "hidden", border: "1.5px solid rgba(212,168,83,0.35)" }}>
+              <div style={{
+                background: "linear-gradient(135deg, rgba(212,168,83,0.12), rgba(200,105,58,0.08))",
+                border: "1.5px solid rgba(212,168,83,0.25)",
+                borderRadius: 18,
+                padding: 26,
+                backdropFilter: "blur(14px)",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,83,0.15)",
+                position: "relative",
+                overflow: "hidden"
+              }}>
+                <div style={{
+                  position: "absolute",
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  background: "radial-gradient(circle at 50% 0%, rgba(212,168,83,0.1) 0%, transparent 60%)",
+                  pointerEvents: "none"
+                }} />
+
+                <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16, position: "relative", zIndex: 1 }}>
+                  <div style={{
+                    width: 44, height: 44,
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    border: "2px solid rgba(212,168,83,0.5)",
+                    boxShadow: "0 0 16px rgba(212,168,83,0.3)"
+                  }}>
                     <img src={logoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#d4a853" }}>Gerab Nyed Yon Limited</div>
-                    <div style={{ fontSize: 10, color: "#6a5028", letterSpacing: 1 }}>ASSET MANAGEMENT · BHUTAN</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: "#d4a853", textShadow: "0 0 12px rgba(212,168,83,0.4)" }}>Gerab Nyed Yon Limited</div>
+                    <div style={{ fontSize: 9.5, color: "#6a5028", letterSpacing: 1.2, textTransform: "uppercase", fontWeight: 600 }}>✦ Asset Management ✦</div>
                   </div>
                 </div>
-                <p style={{ margin: 0, fontSize: 11, color: "#6a5028", lineHeight: 1.7 }}>
-                  This dashboard presents the consolidated asset portfolio of religious institutions registered under Gerab Nyed Yon Limited. Holdings span land (232 plots), buildings (47 structures), and equity shares across multiple companies including BNBL, BBPL, PCAL, DFAL, BFAL, RICB and others.
+
+                <p style={{
+                  margin: 0,
+                  fontSize: 11,
+                  color: "#6a5028",
+                  lineHeight: 1.7,
+                  position: "relative",
+                  zIndex: 1,
+                  fontWeight: 500
+                }}>
+                  This premium dashboard showcases the consolidated asset portfolio of religious institutions registered under Gerab Nyed Yon Limited. Holdings span land (232 plots), buildings (47 structures), and equity shares across multiple companies including BNBL, BBPL, PCAL, DFAL, BFAL, RICB and others. <span style={{ color: "#d4a853", fontWeight: 700 }}>All data is fully interactive and real-time.</span>
                 </p>
               </div>
             </div>
@@ -650,87 +1190,138 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Footer */}
-      <div style={{ position: "relative", zIndex: 1, borderTop: "1px solid rgba(212,168,83,0.1)", padding: "14px 36px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "#4a3818", background: "rgba(0,0,0,0.25)" }}>
-        <span style={{ letterSpacing: 1 }}>GERAB NYED YON LIMITED · CONFIDENTIAL ASSET REGISTRY</span>
-        <span>Grand Total: {fmtFull(GRAND_TOTAL)} · 232 Plots · 47 Buildings · 18,947,628 Shares</span>
+      {/* FOOTER */}
+      <div style={{
+        position: "relative",
+        zIndex: 1,
+        borderTop: "1px solid rgba(212,168,83,0.15)",
+        padding: "16px 36px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        fontSize: 10,
+        color: "#4a3818",
+        background: "linear-gradient(90deg, rgba(0,0,0,0.3), rgba(0,0,0,0.2))",
+        backdropFilter: "blur(12px)",
+        flexWrap: "wrap",
+        gap: 16
+      }}>
+        <span style={{ letterSpacing: 1.5, fontWeight: 600 }}>✦ GERAB NYED YON LIMITED ✦ CONFIDENTIAL ASSET REGISTRY ✦</span>
+        <span style={{ fontWeight: 600 }}>Grand Total: {fmtFull(GRAND_TOTAL)} · 232 Plots · 47 Buildings</span>
       </div>
 
-      {/* Bottom ornament */}
-      <div style={{ height: 3, background: "linear-gradient(90deg, transparent 0%, #8a3a2a 10%, #d4a853 35%, #f0c870 50%, #d4a853 65%, #8a3a2a 90%, transparent 100%)" }} />
+      {/* Bottom Ornament */}
+      <div style={{ height: 5, background: "linear-gradient(90deg, transparent 0%, #d4a853 20%, #f0c870 50%, #d4a853 80%, transparent 100%)", boxShadow: "0 0 20px rgba(212,168,83,0.4)" }} />
 
+      {/* PREMIUM STYLES */}
       <style>{`
         * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: rgba(212,168,83,0.04); }
-        ::-webkit-scrollbar-thumb { background: rgba(212,168,83,0.28); border-radius: 3px; }
-        select option { background: #0c0905; color: #e8d5a3; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        div > div[style*="border-radius: 14px"], div > div[style*="border-radius: 12px"] { animation: slideUp 0.35s ease both; }
-        
-        /* MOBILE RESPONSIVE */
+
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: rgba(212,168,83,0.04);
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #d4a853 0%, #c8693a 100%);
+          border-radius: 4px;
+          box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #e0b563 0%, #d47b4a 100%);
+          box-shadow: inset 0 0 12px rgba(0,0,0,0.5), 0 0 16px rgba(212,168,83,0.3);
+        }
+
+        select option {
+          background: #0c0905;
+          color: #e8d5a3;
+        }
+
+        /* ═══ ANIMATIONS ═══ */
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+
+        @keyframes shine {
+          0% { transform: translateX(-100%) translateY(-100%) rotate(-45deg); }
+          100% { transform: translateX(100%) translateY(100%) rotate(-45deg); }
+        }
+
+        @keyframes glow {
+          0%, 100% { text-shadow: 0 0 8px currentColor, 0 0 16px currentColor; }
+          50% { text-shadow: 0 0 16px currentColor, 0 0 32px currentColor; }
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-12px); }
+        }
+
+        @keyframes pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(212,168,83,0.8); }
+          50% { box-shadow: 0 0 0 15px rgba(212,168,83,0); }
+        }
+
+        @keyframes countPulse {
+          0% { transform: scale(0.8); opacity: 0; }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes titleGlow {
+          0%, 100% { text-shadow: 0 0 20px rgba(212,168,83,0.5), 0 2px 8px rgba(0,0,0,0.6); }
+          50% { text-shadow: 0 0 30px rgba(212,168,83,0.8), 0 2px 12px rgba(0,0,0,0.6); }
+        }
+
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+
+        /* ═══ MOBILE RESPONSIVE ═══ */
         @media (max-width: 768px) {
           * { padding: 0; margin: 0; }
-          body { font-size: 14px; }
-          h1 { font-size: 16px !important; letter-spacing: 1.5px !important; }
+          body { font-size: 13px; }
+          h1 { font-size: 16px !important; letter-spacing: 1.2px !important; }
           h3 { font-size: 11px !important; }
           p { font-size: 9px !important; }
-          
-          div[style*="padding: 16px 20px"] {
-            padding: 12px 16px !important;
-          }
-          
-          div[style*="padding: 22px"] {
-            padding: 14px !important;
-          }
-          
+
           div[style*="padding: 24px"] {
             padding: 14px !important;
           }
-          
+
           select, input, button {
-            font-size: 12px !important;
+            font-size: 11px !important;
             padding: 6px 12px !important;
           }
-          
-          table {
-            font-size: 10px !important;
-          }
-          
-          th, td {
-            padding: 6px 8px !important;
-          }
+
+          table { font-size: 9.5px !important; }
+          th, td { padding: 6px 8px !important; }
         }
-        
+
         @media (max-width: 480px) {
-          h1 { font-size: 14px !important; letter-spacing: 1px !important; }
+          h1 { font-size: 13px !important; letter-spacing: 0.8px !important; }
           h3 { font-size: 10px !important; }
           p { font-size: 8px !important; }
-          
+
           div[style*="padding"] {
             padding: 10px !important;
           }
-          
+
           select, input, button {
-            font-size: 11px !important;
+            font-size: 10px !important;
             padding: 5px 10px !important;
           }
-          
-          table {
-            font-size: 9px !important;
-          }
-          
-          th, td {
-            padding: 5px 6px !important;
-          }
-          
-          div[style*="gap: 14px"] {
-            gap: 8px !important;
-          }
-          
-          div[style*="gap: 18px"] {
-            gap: 10px !important;
-          }
+
+          table { font-size: 8.5px !important; }
+          th, td { padding: 5px 6px !important; }
         }
       `}</style>
     </div>
