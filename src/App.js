@@ -276,7 +276,6 @@ export default function Dashboard() {
       color: COLORS[i % COLORS.length],
     })), []);
 
-
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #080603 0%, #120f07 45%, #0a0804 100%)", fontFamily: "'Palatino Linotype', 'Book Antiqua', Palatino, serif", color: "#e8d5a3", position: "relative", overflow: "hidden" }}>
       <ParticleBg />
