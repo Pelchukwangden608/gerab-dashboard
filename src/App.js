@@ -276,8 +276,8 @@ export default function Dashboard() {
       <div style={{ height: 4, background: "linear-gradient(90deg, transparent 0%, #8a3a2a 10%, #d4a853 35%, #f0c870 50%, #d4a853 65%, #8a3a2a 90%, transparent 100%)" }} />
 
       {/* ── HEADER ── */}
-      <div style={{ position: "relative", zIndex: 1, padding: "22px 36px 18px", borderBottom: "1px solid rgba(212,168,83,0.18)", background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+      <div style={{ position: "relative", zIndex: 1, padding: "16px 20px 14px", borderBottom: "1px solid rgba(212,168,83,0.18)", background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
 
           {/* Logo + Title */}
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
@@ -327,7 +327,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── KPI CARDS ── */}
-      <div style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14, padding: "20px 36px 0" }}>
+      <div style={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, padding: "20px 36px 0" }}>
         {[
           { label: "Grand Total Value", rawValue: kpis.totalValue, icon: "◈", color: "#d4a853", glow: "#d4a85355" },
           { label: "Total Land Value", rawValue: kpis.landValue, icon: "⬡", color: "#7ac47a", glow: "#7ac47a44" },
@@ -355,12 +355,12 @@ export default function Dashboard() {
       </div>
 
       {/* ── CONTENT ── */}
-      <div style={{ position: "relative", zIndex: 1, padding: "20px 36px 44px" }}>
+      <div style={{ position: "relative", zIndex: 1, padding: "16px 20px 30px" }}>
 
         {/* ═══ OVERVIEW ═══ */}
         {activeTab === "overview" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 18 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18 }}>
 
               {/* Donut */}
               <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, padding: 24 }}>
@@ -399,13 +399,26 @@ export default function Dashboard() {
             <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, padding: 24 }}>
               <h3 style={{ margin: "0 0 3px", fontSize: 12, color: "#d4a853", letterSpacing: 2, textTransform: "uppercase" }}>Portfolio Heatmap</h3>
               <p style={{ margin: "0 0 14px", fontSize: 10.5, color: "#4a3818" }}>Relative size of each institution's total portfolio</p>
-              <ResponsiveContainer width="100%" height={190}>
-                <Treemap data={treemapChildren} dataKey="size" stroke="#0a0804"
+              <ResponsiveContainer width="100%" height={380}>
+                <Treemap data={treemapChildren} dataKey="size" stroke="#1a1a1a" strokeWidth={3}
                   content={({ x, y, width, height, name, color }) => (
                     <g>
-                      <rect x={x} y={y} width={width} height={height} fill={color} fillOpacity={0.72} stroke="#0a0804" strokeWidth={2} rx={4} />
-                      {width > 55 && height > 24 && (
-                        <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={Math.min(width / 9, 11)} fontFamily="sans-serif" fontWeight="600">{name}</text>
+                      <defs>
+                        <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
+                          <feGaussianBlur in="SourceGraphic" stdDeviation={2} />
+                        </filter>
+                        <filter id="shadow">
+                          <feDropShadow dx={1} dy={1} stdDeviation={2} floodOpacity={0.6} />
+                        </filter>
+                      </defs>
+                      <rect x={x} y={y} width={width} height={height} fill={color} fillOpacity={0.9} stroke="#1a1a1a" strokeWidth={3} rx={8} />
+                      {width > 35 && height > 18 && (
+                        <>
+                          {/* Dark shadow/outline for text */}
+                          <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="middle" fill="#000" fontSize={Math.min(width / 10, 15)} fontFamily="Arial, sans-serif" fontWeight="900" opacity={0.5} filter="url(#shadow)">{name}</text>
+                          {/* Bright white text on top */}
+                          <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="middle" fill="#ffffff" fontSize={Math.min(width / 10, 15)} fontFamily="Arial, sans-serif" fontWeight="700" textShadow="0 2px 4px rgba(0,0,0,0.8)" style={{ paintOrder: "stroke", stroke: "#000", strokeWidth: 0.5 }}>{name}</text>
+                        </>
                       )}
                     </g>
                   )} />
@@ -418,7 +431,7 @@ export default function Dashboard() {
         {activeTab === "breakdown" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             {selectedProfile && (
-              <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 18 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
                 {/* Profile Card */}
                 <div style={{ background: "rgba(212,168,83,0.07)", border: "1px solid rgba(212,168,83,0.28)", borderRadius: 14, padding: 24 }}>
                   <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", border: "1.5px solid rgba(212,168,83,0.4)", marginBottom: 12 }}>
@@ -510,7 +523,7 @@ export default function Dashboard() {
         {activeTab === "plots" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Thromde Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
               {thromdeStats.map((t, i) => (
                 <div key={i} onClick={() => setSelectedThromde(t.thromde === selectedThromde ? "All" : t.thromde)}
                   style={{ background: selectedThromde === t.thromde ? "rgba(212,168,83,0.14)" : "rgba(255,255,255,0.025)", border: `1px solid ${selectedThromde === t.thromde ? "#d4a853" : "rgba(212,168,83,0.14)"}`, borderRadius: 12, padding: 18, cursor: "pointer", transition: "all 0.25s" }}>
@@ -572,7 +585,7 @@ export default function Dashboard() {
 
         {/* ═══ INSIGHTS ═══ */}
         {activeTab === "detail" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18 }}>
             <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(212,168,83,0.14)", borderRadius: 14, padding: 26 }}>
               <h3 style={{ margin: "0 0 18px", fontSize: 12, color: "#d4a853", letterSpacing: 2, textTransform: "uppercase" }}>Portfolio Summary</h3>
               {[
@@ -654,6 +667,71 @@ export default function Dashboard() {
         select option { background: #0c0905; color: #e8d5a3; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         div > div[style*="border-radius: 14px"], div > div[style*="border-radius: 12px"] { animation: slideUp 0.35s ease both; }
+        
+        /* MOBILE RESPONSIVE */
+        @media (max-width: 768px) {
+          * { padding: 0; margin: 0; }
+          body { font-size: 14px; }
+          h1 { font-size: 16px !important; letter-spacing: 1.5px !important; }
+          h3 { font-size: 11px !important; }
+          p { font-size: 9px !important; }
+          
+          div[style*="padding: 16px 20px"] {
+            padding: 12px 16px !important;
+          }
+          
+          div[style*="padding: 22px"] {
+            padding: 14px !important;
+          }
+          
+          div[style*="padding: 24px"] {
+            padding: 14px !important;
+          }
+          
+          select, input, button {
+            font-size: 12px !important;
+            padding: 6px 12px !important;
+          }
+          
+          table {
+            font-size: 10px !important;
+          }
+          
+          th, td {
+            padding: 6px 8px !important;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          h1 { font-size: 14px !important; letter-spacing: 1px !important; }
+          h3 { font-size: 10px !important; }
+          p { font-size: 8px !important; }
+          
+          div[style*="padding"] {
+            padding: 10px !important;
+          }
+          
+          select, input, button {
+            font-size: 11px !important;
+            padding: 5px 10px !important;
+          }
+          
+          table {
+            font-size: 9px !important;
+          }
+          
+          th, td {
+            padding: 5px 6px !important;
+          }
+          
+          div[style*="gap: 14px"] {
+            gap: 8px !important;
+          }
+          
+          div[style*="gap: 18px"] {
+            gap: 10px !important;
+          }
+        }
       `}</style>
     </div>
   );
